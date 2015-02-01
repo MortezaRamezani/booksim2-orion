@@ -211,6 +211,12 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
     _LoadWatchList(watch_file);
   }
 
+  // Orion Power Support
+  string orion_file = config.GetStr( "orion_file" );
+  if((orion_file != "") && (orion_file != "-")) {
+    _orion_file = orion_file;
+  }
+
   vector<int> watch_flits = config.GetIntArray("watch_flits");
   for(size_t i = 0; i < watch_flits.size(); ++i) {
     _flits_to_watch.insert(watch_flits[i]);
@@ -229,6 +235,17 @@ TrafficManager::TrafficManager( const Configuration &config, const vector<Networ
   } else {
     _stats_out = new ofstream(stats_out_file.c_str());
     config.WriteMatlabFile(_stats_out);
+  }
+
+  // Orion Power Support
+  string orion_out_file = config.GetStr( "orion_out" );
+  if(orion_out_file == "") {
+    _orion_out = NULL;
+  } else if(orion_out_file == "-") {
+    _orion_out = &cout;
+  } else {
+    _orion_out = new ofstream(orion_out_file.c_str());
+    config.WriteMatlabFile(_orion_out);
   }
   
 #ifdef TRACK_FLOWS
@@ -465,6 +482,9 @@ TrafficManager::~TrafficManager( )
   
   if(gWatchOut && (gWatchOut != &cout)) delete gWatchOut;
   if(_stats_out && (_stats_out != &cout)) delete _stats_out;
+  
+  // Orion Power Support
+  if(_orion_out && (_orion_out != &cout)) delete _orion_out;
 
 #ifdef TRACK_FLOWS
   if(_injected_flits_out) delete _injected_flits_out;
@@ -581,6 +601,9 @@ void TrafficManager::_RetireFlit( Flit *f, int dest )
   } else {
     f->Free();
   }
+
+  // Orion Power Support	
+  g_number_of_retired_flits++;
 }
 
 void TrafficManager::_RetirePacket(Flit * head, Flit * tail)
@@ -1191,6 +1214,9 @@ bool TrafficManager::Run( )
   if(_print_csv_results) {
     DisplayOverallStatsCSV();
   }
+
+  // Orion Power Support
+  _ComputeOrionPower();
   
   return true;
 }
@@ -1794,26 +1820,26 @@ void TrafficManager::_LoadWatchList(const string & filename){
 }
 
 // Orion Power Support
-void TrafficManager::_ComputeOrionPower()
-{
-    ofstream PowerOut;
-    
-    char file_name[] = "orien_power_report.txt";    
-   
-    
-    for (int i = 0 ; i < _subnets ; i++ ){
-        PowerOut.open(file_name);
-        PowerOut<< "======== Energy statistics for sub_network at "<<PARM_Freq<<" Hz =======\n";
-    PowerOut.close();
-        _net[i]->_PowerReports(0,file_name,_time);
-    }
+void TrafficManager::_ComputeOrionPower(){
 
-    PowerOut.open(file_name, std::ofstream::app);
-    
-    PowerOut << "\n================= Number of Filts ==================\n";
-    PowerOut << " The Total Number of Injected Flits:\t" << g_number_of_injected_flits << "\n";
-    PowerOut << " The Total Number of Retired Flits:\t" << g_number_of_retired_flits << "\n";
-    PowerOut << "====================================================\n\n";
+		ofstream PowerOut;
 
-    PowerOut.close();
+		char *file_name = _orion_file.c_str();
+
+
+		for (int i = 0 ; i < _subnets ; i++ ){
+				PowerOut.open(file_name);
+				PowerOut<< "======== Energy statistics for sub_network at "<<PARM_Freq<<" Hz =======\n";
+				PowerOut.close();
+				_net[i]->_PowerReports(0,file_name,_time);
+		}
+
+		PowerOut.open(file_name, std::ofstream::app);
+
+		PowerOut << "\n================= Number of Filts ==================\n";
+		PowerOut << " The Total Number of Injected Flits:\t" << g_number_of_injected_flits << "\n";
+		PowerOut << " The Total Number of Retired Flits:\t" << g_number_of_retired_flits << "\n";
+		PowerOut << "====================================================\n\n";
+
+		PowerOut.close();
 }

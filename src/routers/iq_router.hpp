@@ -116,7 +116,7 @@ class IQRouter : public Router {
 
   virtual void _InternalStep( );
 
-  bool _SWAllocAddReq(int input, int vc, int output);
+  bool _SWAllocAddReq(unsigned int * _orion_current_sw_requset, int input, int vc, int output);
 
   void _InputQueuing( );
 

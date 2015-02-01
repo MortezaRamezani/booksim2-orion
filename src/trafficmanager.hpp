@@ -197,6 +197,10 @@ protected:
   //flits to watch
   ostream * _stats_out;
 
+  // Orion Power Support
+  ostream * _orion_out;
+  string _orion_file;
+
 #ifdef TRACK_FLOWS
   vector<vector<int> > _injected_flits;
   vector<vector<int> > _ejected_flits;

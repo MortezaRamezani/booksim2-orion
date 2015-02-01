@@ -38,6 +38,9 @@
 #include "channel.hpp"
 #include "config_utils.hpp"
 
+// Orion Power Support
+#include "SIM_router.h"
+
 typedef Channel<Credit> CreditChannel;
 
 class Router : public TimedModule {
@@ -91,9 +94,43 @@ protected:
   virtual void _InternalStep() = 0;
 
 public:
+  
+  // Orion Power Support
+
+  /*
+  * add power calculation from Orion 
+  */
+
+  SIM_router_area_t _orion_router_area;
+  SIM_router_power_t  _orion_router_power;
+  SIM_router_info_t  _orion_router_info;
+    
+  //crossbar power
+  int * _orion_crosbar_last_match;
+
+  //switch arbitor power
+  unsigned int * _orion_last_sw_request; // bit vector _ [outputs]
+  int * _orion_last_sw_grant; // [outputs]
+
+  //VC arbitor power
+  unsigned int * _orion_last_vc_reguest; //bit vector _ [outputs * VCs]
+  int * _orion_last_vc_grant; // [outputs * VCs]
+
+  //link power
+  int * _orion_link_output_counters;
+  double * _orion_link_length;
+
+  //temporary counters; TODO: delete this variables
+  int _number_of_crossed_flits;
+  int _number_of_crossed_headerFlits;
+  int _number_of_calls_of_power_functions;
+
   Router( const Configuration& config,
 	  Module *parent, const string & name, int id,
 	  int inputs, int outputs );
+  
+  // Orion Power Support
+  virtual ~Router( );
 
   static Router *NewRouter( const Configuration& config,
 			    Module *parent, const string & name, int id,

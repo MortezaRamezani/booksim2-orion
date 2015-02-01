@@ -273,6 +273,10 @@ BookSimConfig::BookSimConfig( )
   AddStrField("watch_out", "");
 
   AddStrField("stats_out", "");
+  
+  // Orion Power Support
+  AddStrField("orion_out", "");
+  AddStrField("orion_file", "");
 
 #ifdef TRACK_FLOWS
   AddStrField("injected_flits_out", "");
