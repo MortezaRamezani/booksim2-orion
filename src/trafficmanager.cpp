@@ -1792,3 +1792,28 @@ void TrafficManager::_LoadWatchList(const string & filename){
     Error("Unable to open flit watch file: " + filename);
   }
 }
+
+// Orion Power Support
+void TrafficManager::_ComputeOrionPower()
+{
+    ofstream PowerOut;
+    
+    char file_name[] = "orien_power_report.txt";    
+   
+    
+    for (int i = 0 ; i < _subnets ; i++ ){
+        PowerOut.open(file_name);
+        PowerOut<< "======== Energy statistics for sub_network at "<<PARM_Freq<<" Hz =======\n";
+    PowerOut.close();
+        _net[i]->_PowerReports(0,file_name,_time);
+    }
+
+    PowerOut.open(file_name, std::ofstream::app);
+    
+    PowerOut << "\n================= Number of Filts ==================\n";
+    PowerOut << " The Total Number of Injected Flits:\t" << g_number_of_injected_flits << "\n";
+    PowerOut << " The Total Number of Retired Flits:\t" << g_number_of_retired_flits << "\n";
+    PowerOut << "====================================================\n\n";
+
+    PowerOut.close();
+}

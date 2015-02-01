@@ -249,6 +249,9 @@ protected:
   virtual void _WriteClassStats( int c, ostream & os ) const ;
   virtual void _DisplayOverallClassStats( int c, ostream & os ) const ;
 
+  // Orion Power Support
+  void _ComputeOrionPower();
+
   TrafficManager( const Configuration &config, const vector<Network *> & net );
 
 public:
