@@ -35,6 +35,9 @@
 #include "booksim.hpp"
 #include "booksim_config.hpp"
 
+// Orion Power Support
+#include "SIM_router_model.h"
+
 BookSimConfig::BookSimConfig( )
 { 
   //========================================================
@@ -306,6 +309,36 @@ BookSimConfig::BookSimConfig( )
 
   //==================Network file===========================
   AddStrField("network_file","");
+
+  //==================Orion support===========================
+  ////power added to support Orion
+  ////power added to support Orion in Flexus
+
+   _float_map["Vdd"]        = 1.1;
+   _float_map["Orion_tr"]   = 0.2 ;
+   _float_map["Orion_Freq"] = 1e9;
+
+   _int_map["Orion_inport"] =   5;
+   _int_map["Orion_outport"]=   5;
+   _int_map["Orion_bitwidth"]=  128;
+   _int_map["Orion_vc_class"]=  1;   /* # of total message classes */
+
+   _int_map["Orion_IsSharedBuffIn"]= 0; /* do input virtual channels physically share buffers? */
+   _int_map["Orion_IsSharedBuffOut"]= 0;        /* do output virtual channels physically share buffers? */
+   _int_map["Orion_crossbar_model"]= MULTREE_CROSSBAR;  /* crossbar model type MATRIX_CROSSBAR, MULTREE_CROSSBAR, or TRISTATE_CROSSBAR (only for Orion3.0)*/
+   _int_map["Orion_crsbar_degree"]= 4;                                  /* crossbar mux degree */
+   _int_map["Orion_Cxbar_Cxpoint"]= TRISTATE_GATE;              /* crossbar connector type */
+   _int_map["Orion_trans_type"]= NP_GATE;                               /* crossbar transmission gate type */
+   _int_map["Orion_IsInBuff"]= 1;//                     1               /* have input buffer? */
+   _int_map["Orion_buff_type"]= SRAM ;//SRAM    /*buffer model type, SRAM or REGISTER*/
+   _int_map["Orion_IsOutBuff"]= 0       ;//             0
+   _int_map["Orion_out_buf_size"]= 0;//         2
+   _int_map["Orion_in_arb_model"]= RR_ARBITER;//                /* input side arbiter model type, MATRIX_ARBITER , RR_ARBITER, QUEUE_ARBITER*/
+   _int_map["Orion_out_arb_model"]= RR_ARBITER;//       /* output side arbiter model type, MATRIX_ARBITER */
+   _int_map["Orion_allocator_model"]= TWO_STAGE_ARB;//  /*vc allocator type, ONE_STAGE_ARB, TWO_STAGE_ARB, VC_SELECT*/
+   _int_map["Orion_in_vc_arb_model"]= RR_ARBITER;//    /*input side arbiter model type for TWO_STAGE_ARB. MATRIX_ARBITER, RR_ARBITER, QUEUE_ARBITER*/
+   _int_map["Orion_out_vc_arb_model"]= RR_ARBITER ;//   /*output side arbiter model type (for both ONE_STAGE_ARB and TWO_STAGE_ARB). MATRIX_ARBITER, RR_ARBITER, QUEUE_ARBITER */
+
 }
 
 PowerConfig::PowerConfig( )

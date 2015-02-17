@@ -361,11 +361,11 @@ double Power_Module::powerCrossbar(double width, double inputs, double outputs, 
     Cin -= ( 0.5 * CwIn + outputs/2 * Cxi) ;
   }
   //this maybe missing +cti
-  double Cout = CwOut + Cto + (inputs * Cxo) ;
+  double Cout2 = CwOut + Cto + (inputs * Cxo) ;
   if ( from < inputs/2) {
-    Cout -= ( 0.5 * CwOut + (inputs/2 * Cxo)) ;
+    Cout2 -= ( 0.5 * CwOut + (inputs/2 * Cxo)) ;
   }
-  return 0.5 * (Cin + Cout) * (Vdd * Vdd * fCLK) ;
+  return 0.5 * (Cin + Cout2) * (Vdd * Vdd * fCLK) ;
 }
 
 

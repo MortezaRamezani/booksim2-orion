@@ -37,6 +37,9 @@
 #include "booksim.hpp"
 #include "flit.hpp"
 
+// Orion Power Support
+#include "globals.hpp"
+
 stack<Flit *> Flit::_all;
 stack<Flit *> Flit::_free;
 
@@ -91,6 +94,10 @@ Flit * Flit::New() {
     f->Reset();
     _free.pop();
   }
+  
+  // Orion Power Support
+  g_number_of_injected_flits++;
+
   return f;
 }
 

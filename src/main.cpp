@@ -90,7 +90,10 @@ bool gTrace;
 
 ostream * gWatchOut;
 
-
+// Orion Power Support
+int g_number_of_injected_flits = 0;
+int g_number_of_retired_flits = 0;
+int g_total_cs_register_writes = 0;
 
 /////////////////////////////////////////////////////////////////////////////
 

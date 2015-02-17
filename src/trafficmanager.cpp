@@ -1824,17 +1824,17 @@ void TrafficManager::_ComputeOrionPower(){
 
 		ofstream PowerOut;
 
-		char *file_name = _orion_file.c_str();
+		//char *file_name = _orion_file.c_str();
 
 
 		for (int i = 0 ; i < _subnets ; i++ ){
-				PowerOut.open(file_name);
+				PowerOut.open(_orion_file.c_str());
 				PowerOut<< "======== Energy statistics for sub_network at "<<PARM_Freq<<" Hz =======\n";
 				PowerOut.close();
-				_net[i]->_PowerReports(0,file_name,_time);
+				_net[i]->_PowerReports(0, _orion_file, _time);
 		}
 
-		PowerOut.open(file_name, std::ofstream::app);
+		PowerOut.open(_orion_file.c_str(), std::ofstream::app);
 
 		PowerOut << "\n================= Number of Filts ==================\n";
 		PowerOut << " The Total Number of Injected Flits:\t" << g_number_of_injected_flits << "\n";

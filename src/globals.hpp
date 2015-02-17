@@ -50,4 +50,11 @@ extern bool gTrace;
 
 extern std::ostream * gWatchOut;
 
+
+// Orion Power Support
+extern int g_number_of_cache;
+extern int g_number_of_injected_flits;
+extern int g_number_of_retired_flits;
+extern int g_total_cs_register_writes;
+
 #endif

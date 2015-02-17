@@ -42,6 +42,9 @@
 #include "config_utils.hpp"
 #include "globals.hpp"
 
+//Orion Power Support
+#include "SIM_link.h"
+
 typedef Channel<Credit> CreditChannel;
 
 
@@ -52,6 +55,13 @@ protected:
   int _nodes;
   int _channels;
   int _classes;
+
+  //Orion Power Support
+  //double total_NoC_power;
+  //double static_NoC_power;
+  //double dynamic_NoC_power;
+  vector <double> router_power;
+  vector <double> link_power;
 
   vector<Router *> _routers;
 
@@ -112,6 +122,9 @@ public:
   const vector<Router *> & GetRouters(){return _routers;}
   Router * GetRouter(int index) {return _routers[index];}
   int NumRouters() const {return _size;}
+  
+  //Orion Power Support
+  void _PowerReports(int report_mode, string fileout, long time_power);
 };
 
 #endif 

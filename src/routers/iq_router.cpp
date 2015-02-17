@@ -34,6 +34,8 @@
 #include <cstdlib>
 #include <cassert>
 #include <limits>
+//Orion Power Support
+#include <math.h>
 
 #include "globals.hpp"
 #include "random_utils.hpp"
@@ -373,6 +375,18 @@ void IQRouter::_InputQueuing( )
     ++_stored_flits[f->cl][input];
     if(f->head) ++_active_packets[f->cl][input];
 #endif
+    
+    // MoRi
+    /* added by [a.mazloumi and modarressi] */
+    _number_of_crossed_flits++;
+    if(f->head)
+       _number_of_crossed_headerFlits++;
+    u_char x[8]="abcdefg";
+    u_char y[8]="pqrstuv";
+    u_char z[8]="abcdtuv";
+    SIM_buf_power_data_write(&(_orion_router_info.in_buf_info),&(_orion_router_power.in_buf),x,y,z );
+    _number_of_calls_of_power_functions++;
+    /* end [a.mazloumi and modarressi]codes */
 
     _bufferMonitor->write(input, f) ;
 
@@ -554,6 +568,15 @@ void IQRouter::_VCAllocEvaluate( )
 {
   assert(_vc_allocator);
 
+  // MoRi
+  /* added by a.mazloumi */
+  unsigned int _orion_current_vc_requset [_outputs*_vcs];
+  for(int i = 0 ; i < _outputs*_vcs ; i++)
+    _orion_current_vc_requset[i] = 0;
+  int _orion_current_vc_grant = 0;
+  /* end of a.mazloumicodes */
+
+
   bool watched = false;
 
   for(deque<pair<int, pair<pair<int, int>, int> > >::iterator iter = _vc_alloc_vcs.begin();
@@ -682,6 +705,10 @@ void IQRouter::_VCAllocEvaluate( )
 	      = _vc_shuffle_requests ? (vc*_inputs + input) : (input*_vcs + vc);
 	    _vc_allocator->AddRequest(input_and_vc, out_port*_vcs + out_vc, 
 				      0, in_priority, out_priority);
+            //MoRi
+            /* added by [a.mazloumi and modarressi] */
+            _orion_current_vc_requset[out_port*_vcs + out_vc] = _orion_current_vc_requset[out_port*_vcs + out_vc] | ((unsigned int)pow(2,input_and_vc));
+            /* end of [a.mazloumi and modarressi] */
 	  }
 	}
       }
@@ -745,6 +772,18 @@ void IQRouter::_VCAllocEvaluate( )
       assert((match_output >= 0) && (match_output < _outputs));
       int const match_vc = output_and_vc % _vcs;
       assert((match_vc >= 0) && (match_vc < _vcs));
+
+      // MoRi
+      /* added by [a.mazloumi and modarressi] */
+      _orion_current_vc_grant = input_and_vc;
+
+      if(!(PARM_v_channel < 2 && PARM_v_class < 2))
+          SIM_arbiter_record(&(_orion_router_power.vc_out_arb), _orion_current_vc_requset[output_and_vc], _orion_last_vc_reguest[output_and_vc]
+                                                                  , _orion_current_vc_grant, _orion_last_vc_grant[output_and_vc]);
+      _number_of_calls_of_power_functions++;
+      _orion_last_vc_reguest[output_and_vc] = _orion_current_vc_requset[output_and_vc];
+      _orion_last_vc_grant[output_and_vc] = _orion_current_vc_grant;
+      /* end of [a.mazloumi and modarressi] */
 
       if(f->watch) {
 	*gWatchOut << GetSimTime() << " | " << FullName() << " | "
@@ -1074,6 +1113,12 @@ void IQRouter::_SWHoldUpdate( )
       if(f->tail) --_active_packets[f->cl][input];
 #endif
 
+      // MoRi
+      /* added by [a.mazloumi and modarressi] */
+      SIM_buf_power_data_read(&(_orion_router_info.in_buf_info),&(_orion_router_power.in_buf),0xffff0000);
+      _number_of_calls_of_power_functions++;
+      /* end [a.mazloumi and modarressi] codes */
+
       _bufferMonitor->read(input, f) ;
       
       f->hops++;
@@ -1120,6 +1165,14 @@ void IQRouter::_SWHoldUpdate( )
 #endif
 
       dest_buf->SendingFlit(f);
+      
+      // MoRi
+      /* added by [a.mazloumi and modarressi]@ */
+      SIM_crossbar_record(&(_orion_router_power.crossbar), 1, 0xffffffff, 0x0000ffff, 0, 0); //sending to crossbar
+      _number_of_calls_of_power_functions++;
+      /* end [a.mazloumi and modarressi]@ codes */      
+
+
 
       _crossbar_flits.push_back(make_pair(-1, make_pair(f, make_pair(expanded_input, expanded_output))));
       
@@ -1221,7 +1274,9 @@ void IQRouter::_SWHoldUpdate( )
 // switch allocation
 //------------------------------------------------------------------------------
 
-bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
+//bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
+// MoRi
+bool IQRouter::_SWAllocAddReq(unsigned int * _orion_current_sw_requset, int input, int vc, int output)
 {
   assert(input >= 0 && input < _inputs);
   assert(vc >= 0 && vc < _vcs);
@@ -1277,6 +1332,10 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
 	}
 	allocator->RemoveRequest(expanded_input, expanded_output, req.label);
 	allocator->AddRequest(expanded_input, expanded_output, vc, prio, prio);
+        // MoRi
+	/* added by [a.mazloumi and modarressi]@ */
+	_orion_current_sw_requset[output] = _orion_current_sw_requset[output] | ((unsigned int) pow(2,(expanded_input)));
+	/* end [a.mazloumi and modarressi]@ */
 	return true;
       }
       if(f->watch) {
@@ -1301,6 +1360,11 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
 		 << ")." << endl;
     }
     allocator->AddRequest(expanded_input, expanded_output, vc, prio, prio);
+    // MoRi
+    /* added by [a.mazloumi and modarressi] */
+    _orion_current_sw_requset[output] = _orion_current_sw_requset[output] | ((unsigned int) pow(2,(expanded_input)));
+    /* end [a.mazloumi and modarressi] */
+
     return true;
   }
   if(f->watch) {
@@ -1326,6 +1390,14 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
 
 void IQRouter::_SWAllocEvaluate( )
 {
+  // MoRi
+  /* added by a.mazloumi */
+  unsigned int _orion_current_sw_requset[_outputs];
+  for(int i = 0 ; i < _outputs ; i++)
+    _orion_current_sw_requset[i] = 0;
+  int _orion_current_sw_grant = 0;
+  /* end of a.mazloum*/
+
   bool watched = false;
 
   for(deque<pair<int, pair<pair<int, int>, int> > >::iterator iter = _sw_alloc_vcs.begin();
@@ -1382,7 +1454,7 @@ void IQRouter::_SWAllocEvaluate( )
 	iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
 	continue;
       }
-      bool const requested = _SWAllocAddReq(input, vc, dest_output);
+      bool const requested = _SWAllocAddReq(_orion_current_sw_requset, input, vc, dest_output);
       watched |= requested && f->watch;
       continue;
     }
@@ -1464,7 +1536,7 @@ void IQRouter::_SWAllocEvaluate( )
 	}
 	iter->second.second = dest_buf->IsFull() ? STALL_BUFFER_FULL : STALL_BUFFER_RESERVED;
       } else {
-	bool const requested = _SWAllocAddReq(input, vc, dest_output);
+	bool const requested = _SWAllocAddReq(_orion_current_sw_requset, input, vc, dest_output);
 	watched |= requested && f->watch;
       }
     }
@@ -1530,6 +1602,16 @@ void IQRouter::_SWAllocEvaluate( )
       assert((expanded_output % _output_speedup) == (input % _output_speedup));
       int const granted_vc = _sw_allocator->ReadRequest(expanded_input, expanded_output);
       if(granted_vc == vc) {
+        // MoRi
+        /* added by [a.mazloumi and modarressi] */
+        _orion_current_sw_grant = expanded_input;
+        SIM_arbiter_record(&(_orion_router_power.sw_out_arb), _orion_current_sw_requset[expanded_output / _output_speedup], _orion_last_sw_request[expanded_output / _output_speedup]
+                                                            , _orion_current_sw_grant, _orion_last_sw_grant[expanded_output / _output_speedup]);
+        _number_of_calls_of_power_functions++;
+        _orion_last_sw_request[expanded_output / _output_speedup] = _orion_current_sw_requset[expanded_output / _output_speedup];
+        _orion_last_sw_grant[expanded_output / _output_speedup]   = _orion_current_sw_grant;
+        /* end of [a.mazloumi and modarressi] codes */
+
 	if(f->watch) {
 	  *gWatchOut << GetSimTime() << " | " << FullName() << " | "
 		     << "Assigning output " << (expanded_output / _output_speedup)
@@ -1984,6 +2066,12 @@ void IQRouter::_SWAllocUpdate( )
       if(f->tail) --_active_packets[f->cl][input];
 #endif
 
+      // MoRi
+      /* added by [a.mazloumi and modarressi] */
+      SIM_buf_power_data_read(&(_orion_router_info.in_buf_info),&(_orion_router_power.in_buf),0xffff0000);
+      _number_of_calls_of_power_functions++;
+      /* end [a.mazloumi and modarressi]@ */
+
       _bufferMonitor->read(input, f) ;
 
       f->hops++;
@@ -2030,6 +2118,12 @@ void IQRouter::_SWAllocUpdate( )
 #endif
 
       dest_buf->SendingFlit(f);
+      // MoRi
+      /* added by [a.mazloumi and modarressi] */
+      SIM_crossbar_record(&(_orion_router_power.crossbar), 1, 0xffffffff, 0x0000ffff, 0, 0); //sending to crossbar
+      _number_of_calls_of_power_functions++;
+      /* end [a.mazloumi and modarressi]codes */
+
 
       _crossbar_flits.push_back(make_pair(-1, make_pair(f, make_pair(expanded_input, expanded_output))));
 
@@ -2201,6 +2295,14 @@ void IQRouter::_SwitchUpdate( )
 		 << " at output " << output
 		 << "." << endl;
     }
+
+    // MoRi
+    /* added by [a.mazloumi and modarressi]@*/
+    SIM_crossbar_record(&(_orion_router_power.crossbar), 0, 0xffffffff, 0x0000ffff, expanded_input, _orion_crosbar_last_match[expanded_output]);
+    _number_of_calls_of_power_functions++;
+    _orion_crosbar_last_match[expanded_output] = expanded_input;
+    /* end [a.mazloumi and modarressi]@ codes */
+
     _output_buffer[output].push(f);
     //the output buffer size isn't precise due to flits in flight
     //but there is a maximum bound based on output speed up and ST traversal
@@ -2256,6 +2358,16 @@ void IQRouter::_SendFlits( )
       if(gTrace) {
 	cout << "Outport " << output << endl << "Stop Mark" << endl;
       }
+
+      // MoRi
+      /* added by a.mazloumi@ */
+      if(f)
+      {
+        if(output != (_outputs-1))
+      _orion_link_output_counters[output]++;
+      }
+      /* end of a.mazloumi codes*/
+
       _output_channels[output]->Send( f );
     }
   }
